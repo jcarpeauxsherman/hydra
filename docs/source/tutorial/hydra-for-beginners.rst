@@ -26,7 +26,7 @@ Introduction
 
 Welcome to the Hydra tutorial.  This series of modules will walk you through the basics of Hydra in order to help you understand the system and exploit its capabilities.  The intended audience for this tutorial are Hydra users.  The focus will be on how to develop Hydra jobs and queries to perform tasks (simple to complex).  Hydra is a distributed system and some basic knowledge about how that system works is crucial to using it efficiently so this tutorial will cover some of the core design elements as well.
 
-Although Hydra supports a variety of data analysis processes it original goal and most common use case is time-series analysis.   An event occurs with a certain set of features at a certain time and we'd like to answer questions like:
+Although Hydra supports a variety of data analysis processes its original goal and most common use case is time-series analysis.   An event occurs with a certain set of features at a certain time and we'd like to answer questions like:
 
 1.  How many events occurred in time range R for publisher P and domain D?
 2.  Which user agents did we see most often in time range R?
@@ -34,15 +34,15 @@ Although Hydra supports a variety of data analysis processes it original goal an
 
 To support this type of time-series analysis efficiently Hydra's primary data structure is a Tree.  Most databases use a tree data structure to create indexes on data tables.  Hydra uses the tree (index) as the data structure.  This allows Hydra to aggregate and analyze data on write and reduces the amount of data that must be stored long term.  Updating the analysis on write is a critical feature for Hydra that allows incremental updates to the data structure and fast analysis without massive data processing at query time.  
 
-In addition to time-series analysis Hydra can also be used for key-value data analysis.  For example mapping ID between two namespaces requires a data structure where you can ask questions like, "Given a ID from namespace X what is the matching ID for namespace Y?".
+In addition to time-series analysis Hydra can also be used for key-value data analysis.  For example mapping ID between two namespaces requires a data structure where you can ask questions like, "Given an ID from namespace X what is the matching ID for namespace Y?".
 
 The key to both time-series and key-value data analysis in Hydra is a solid understanding of how the distributed system works, how the data is distributed across the system, and how to select efficient data structures for both reads and writes.
 
-Working with systems like Hydra is different than working with traditional RDBMS data stores. In a traditional data store much of the upfront design effort is spent on designing a data schema that is normalized and generic enough to answer a wide variety of potential queries.  For example you may have a table with basic USER information and then an EVENT table that has a USER_ID column that can be used to map events to a given user.  In Hydra the question we think about the question we'd like to ask first and then build a data structure to help answer that question.  The data is often denormalized (meaning we optimize for read performance and often duplicate the data to make reads more efficient).  It is also very common to process the same source data into several different jobs with different data structures so that each job is optimized for the specific query(s) it is designed to answer.
+Working with systems like Hydra is different than working with traditional RDBMS data stores. In a traditional data store much of the upfront design effort is spent on designing a data schema that is normalized and generic enough to answer a wide variety of potential queries.  For example you may have a table with basic USER information and then an EVENT table that has a USER_ID column that can be used to map events to a given user.  In Hydra we think about the question we'd like to ask first and then build a data structure to help answer that question.  The data is often denormalized (meaning we optimize for read performance and often duplicate the data to make reads more efficient).  It is also very common to process the same source data into several different jobs with different data structures so that each job is optimized for the specific query(s) it is designed to answer.
 
 Goals for this Module:
 
-- Understand the basics Hydra and the types of problems it is well suited for
+- Understand the basics of Hydra and the types of problems it is well suited for
 - Understand the key aspects of Hydra's design that make it unique
 
 Problem Scope
@@ -63,7 +63,7 @@ Challenges At Large Scale
 
 Distributed computing is just like normal computing only harder!  By definition distributed computing requires spreading the data and computation across multiple machines (2 or more). Whenever a process is spread out of multiple machines the probability of failure goes up.  The more machines participating in a cluster the more likely a failure will occur.  For this reason the biggest challenge for a distributed system is to work reliably in an environment where hardware failures are common.  To put this in perspective think about a system that fails 1 out of every 100 attempts.  If you submit 100 jobs to that system 1/100th of them may fail.  Not great but the large majority of the time everything works.  If that same problem is distributed to a distributed system of 100 servers where each fails about 1 out of 100 attempts then the error rate from the user's perspective jumps to *63%*.  So the majority of job submissions will fail.  This means that the distributed system needs to anticipate failure and autonomically recover from those failures so that they are hidden from the end user.  
 
-Another major challenge with large scale computing is evenly balancing the load across all available resources.  Depending on the algorithm used to partition data across the systems data 'hotspots' can cause unbalanced loads.  Even if a good distribution algorithm is used that evenly distributes data the individual performance characteristics of each server can cause some servers to be faster than others.  When machines fail the data stored on those systems must be re-balanced to other servers and this can lead performance issues.  Adding or removing servers from a cluster is another opportunity to introduce imbalance.  Distributed systems need to understand the cost of this imbalance and make decisions about when it is worthwhile to move the data and processing to available nodes. 
+Another major challenge with large scale computing is evenly balancing the load across all available resources.  Depending on the algorithm used to partition data across the systems data 'hotspots' can cause unbalanced loads.  Even if a good distribution algorithm is used that evenly distributes data, the individual performance characteristics of each server can cause some servers to be faster than others.  When machines fail the data stored on those systems must be re-balanced to other servers and this can lead to performance issues.  Adding or removing servers from a cluster is another opportunity to introduce imbalance.  Distributed systems need to understand the cost of this imbalance and make decisions about when it is worthwhile to move the data and processing to available nodes. 
 
 The only thing worse than a server failing in a distributed system is a server slowly dying in a distributed system.  A server that is dying but not dead can cause outsized impact on the overall cluster performance.  These conditions must be detected and the impacted machines must be avoided in order to prevent service degradation.
 
@@ -78,8 +78,7 @@ Hydra is not a traditional relational data store  `RDBMS <http://en.wikipedia.or
 How Hydra Works
 ----------------
 
-Hydra is designed to operate on a large number of commodity (commodity does not mean cheap) servers rather than a small number of enterprise class servers.  This approach 
-is more cost effective and can be more easily scaled up or down than a comparable big iron approach to the problem.
+Hydra is designed to operate on a large number of commodity (commodity does not mean cheap) servers rather than a small number of enterprise class servers.  This approach is more cost effective and can be more easily scaled up or down than a comparable big iron approach to the problem.
 
 Hydra servers are broken into two classes.  Cluster Heads and Minions.  There are a small number of Cluster Heads in a given cluster (usually 2 or 3) and these servers act as gateways to the (typically) large number of Minion servers that are the computation servers.
 
